@@ -12,44 +12,28 @@ if version < 306:
 long_description = """
 # ctpbee_opt_api
 
-基于 [ctpbee_api](https://github.com/ctpbee/ctpbee_api) 的优化版本，感谢原作者 somewheve 的贡献。
+基于 ctpbee_api 的优化版本，感谢原作者 somewheve 的贡献。
 
 ## 优化内容
 
-### 1. 合约查询批量模式 (Instrument Batch Mode)
+### 合约查询批量模式 (Instrument Batch Mode)
+
 解决全量查询合约时 GIL 争抢导致 UI 界面卡顿的问题。
 
-**问题背景**: 查询全量合约（约 14000 条）时，CTP 回调会逐条触发 Python 回调，每次都需要获取 GIL，导致 Qt 主线程无法响应，界面完全卡死约 15 秒。
-
-**解决方案**: 新增批量模式，在 C++ 层缓存所有合约数据，仅在最后一条数据到达时一次性回调 Python，GIL 只获取一次。
-
-## 使用方法
-
-```python
-from ctpbee_api import TdApi
-
-class MyTdApi(TdApi):
-    def onRspQryInstrumentBatch(self, instruments):
-        # 批量模式下，一次性收到所有合约
-        print(f"收到 {len(instruments)} 条合约")
-
-td_api = MyTdApi()
-td_api.setInstrumentBatchMode(True)  # 开启批量模式
-td_api.reqQryInstrument({}, 0)
-# 等待 onRspQryInstrumentBatch 回调
-```
+- 问题背景: 查询全量合约时，CTP 回调会逐条触发 Python 回调，每次都需要获取 GIL，导致界面卡死。
+- 解决方案: 新增批量模式，在 C++ 层缓存所有合约数据，仅在最后一条数据到达时一次性回调 Python。
 
 ## 新增 API
 
-- `setInstrumentBatchMode(enable: bool)`: 设置合约查询批量模式
-- `getInstrumentBatchMode() -> bool`: 获取当前批量模式状态
-- `onRspQryInstrumentBatch(instruments: list)`: 批量模式下的合约查询回调
+- setInstrumentBatchMode(enable): 设置合约查询批量模式
+- getInstrumentBatchMode(): 获取当前批量模式状态  
+- onRspQryInstrumentBatch(instruments): 批量模式下的合约查询回调
 
 ## 安装
 
-```bash
-pip install ctpbee_opt_api
-```
+    pip install ctpbee_opt_api
+
+详细文档请访问: https://github.com/fangdejia/ctpbee_api
 """
 system_name = platform.uname().system
 
@@ -269,6 +253,7 @@ setup(
     description="Optimized Trading API for China Future - Based on ctpbee_api with GIL optimization",
     author='fangdejia',
     long_description=long_description,
+    long_description_content_type="text/markdown",
     author_email='fangdejia@example.com',
     url='https://github.com/fangdejia/ctpbee_api',
     license="MIT",
