@@ -941,7 +941,7 @@ public:
 	virtual void onRspQryInstrument(const dict &data, const dict &error, int reqid, bool last) {};
 
 	// 批量模式下的合约查询回调，一次性返回所有合约
-	virtual void onRspQryInstrumentBatch(const list &data) {};
+	virtual void onRspQryInstrumentBatch(const pybind11::list &data) {};
 
 	virtual void onRspQryDepthMarketData(const dict &data, const dict &error, int reqid, bool last) {};
 

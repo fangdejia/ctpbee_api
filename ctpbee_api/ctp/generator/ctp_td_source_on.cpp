@@ -466,7 +466,7 @@ void onRspQryInstrument(const dict &data, const dict &error, int reqid, bool las
 	}
 };
 
-void onRspQryInstrumentBatch(const list &data) override
+void onRspQryInstrumentBatch(const pybind11::list &data) override
 {
 	try
 	{

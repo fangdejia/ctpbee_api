@@ -4597,7 +4597,7 @@ void TdApi::processRspQryInstrument(Task *task)
 		if (task->task_last)
 		{
 			gil_scoped_acquire acquire;
-			list result;
+			pybind11::list result;
 			for (const auto& item : this->instrument_buffer)
 			{
 				dict data;
