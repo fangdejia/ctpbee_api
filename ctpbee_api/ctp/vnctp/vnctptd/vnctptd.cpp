@@ -1,11 +1,11 @@
-// vnctptd.cpp : ¶¨Òå DLL Ó¦ÓÃ³ÌÐòµÄµ¼³öº¯Êý¡£
+// vnctptd.cpp : ï¿½ï¿½ï¿½ï¿½ DLL Ó¦ï¿½Ã³ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //
 
 #include "vnctptd.h"
 
 
 ///-------------------------------------------------------------------------------------
-///C++µÄ»Øµ÷º¯Êý½«Êý¾Ý±£´æµ½¶ÓÁÐÖÐ
+///C++ï¿½Ä»Øµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿½ï¿½æµ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ///-------------------------------------------------------------------------------------
 
 void TdApi::OnFrontConnected()
@@ -2453,7 +2453,7 @@ void TdApi::OnRspQryRiskSettleProductStatus(CThostFtdcRiskSettleProductStatusFie
 };
 
 ///-------------------------------------------------------------------------------------
-///¹¤×÷Ïß³Ì´Ó¶ÓÁÐÖÐÈ¡³öÊý¾Ý£¬×ª»¯Îªpython¶ÔÏóºó£¬½øÐÐÍÆËÍ
+///ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì´Ó¶ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½×ªï¿½ï¿½Îªpythonï¿½ï¿½ï¿½ï¿½ó£¬½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ///-------------------------------------------------------------------------------------
 
 void TdApi::processTask()
@@ -4579,6 +4579,72 @@ void TdApi::processRspQryProduct(Task *task)
 
 void TdApi::processRspQryInstrument(Task *task)
 {
+	// æ‰¹é‡æ¨¡å¼ï¼šç¼“å­˜æ•°æ®ï¼Œæœ€åŽä¸€æ¡æ—¶ä¸€æ¬¡æ€§å›žè°ƒ
+	if (this->instrument_batch_mode)
+	{
+		if (task->task_data)
+		{
+			CThostFtdcInstrumentField *task_data = (CThostFtdcInstrumentField*)task->task_data;
+			this->instrument_buffer.push_back(*task_data);
+			delete task_data;
+		}
+		if (task->task_error)
+		{
+			delete (CThostFtdcRspInfoField*)task->task_error;
+		}
+		
+		// æœ€åŽä¸€æ¡æ•°æ®ï¼Œä¸€æ¬¡æ€§å›žè°ƒ Python
+		if (task->task_last)
+		{
+			gil_scoped_acquire acquire;
+			list result;
+			for (const auto& item : this->instrument_buffer)
+			{
+				dict data;
+				data["reserve1"] = toUtf(item.reserve1);
+				data["ExchangeID"] = toUtf(item.ExchangeID);
+				data["InstrumentName"] = toUtf(item.InstrumentName);
+				data["reserve2"] = toUtf(item.reserve2);
+				data["reserve3"] = toUtf(item.reserve3);
+				data["ProductClass"] = item.ProductClass;
+				data["DeliveryYear"] = item.DeliveryYear;
+				data["DeliveryMonth"] = item.DeliveryMonth;
+				data["MaxMarketOrderVolume"] = item.MaxMarketOrderVolume;
+				data["MinMarketOrderVolume"] = item.MinMarketOrderVolume;
+				data["MaxLimitOrderVolume"] = item.MaxLimitOrderVolume;
+				data["MinLimitOrderVolume"] = item.MinLimitOrderVolume;
+				data["VolumeMultiple"] = item.VolumeMultiple;
+				data["PriceTick"] = item.PriceTick;
+				data["CreateDate"] = toUtf(item.CreateDate);
+				data["OpenDate"] = toUtf(item.OpenDate);
+				data["ExpireDate"] = toUtf(item.ExpireDate);
+				data["StartDelivDate"] = toUtf(item.StartDelivDate);
+				data["EndDelivDate"] = toUtf(item.EndDelivDate);
+				data["InstLifePhase"] = item.InstLifePhase;
+				data["IsTrading"] = item.IsTrading;
+				data["PositionType"] = item.PositionType;
+				data["PositionDateType"] = item.PositionDateType;
+				data["LongMarginRatio"] = item.LongMarginRatio;
+				data["ShortMarginRatio"] = item.ShortMarginRatio;
+				data["MaxMarginSideAlgorithm"] = item.MaxMarginSideAlgorithm;
+				data["reserve4"] = toUtf(item.reserve4);
+				data["StrikePrice"] = item.StrikePrice;
+				data["OptionsType"] = item.OptionsType;
+				data["UnderlyingMultiple"] = item.UnderlyingMultiple;
+				data["CombinationType"] = item.CombinationType;
+				data["InstrumentID"] = toUtf(item.InstrumentID);
+				data["ExchangeInstID"] = toUtf(item.ExchangeInstID);
+				data["ProductID"] = toUtf(item.ProductID);
+				data["UnderlyingInstrID"] = toUtf(item.UnderlyingInstrID);
+				result.append(data);
+			}
+			this->instrument_buffer.clear();
+			this->onRspQryInstrumentBatch(result);
+		}
+		return;
+	}
+	
+	// åŽŸæœ‰é€»è¾‘ï¼šæ¯æ¡æ•°æ®éƒ½å›žè°ƒ
 	gil_scoped_acquire acquire;
 	dict data;
 	if (task->task_data)
@@ -8726,7 +8792,7 @@ void TdApi::processRspQryRiskSettleProductStatus(Task *task)
 };
 
 ///-------------------------------------------------------------------------------------
-///Ö÷¶¯º¯Êý
+///ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ///-------------------------------------------------------------------------------------
 
 void TdApi::createFtdcTraderApi(string pszFlowPath)
@@ -8839,7 +8905,7 @@ int TdApi::reqUserLogin(const dict &req, int reqid)
 	getInt(req, "ClientIPPort", &myreq.ClientIPPort);
 	getString(req, "ClientIPAddress", myreq.ClientIPAddress);
 
-	//Mac°æ±¾µÄµÇÂ¼º¯Êý¶àÁËÁ½¸ö²ÎÊý
+	//Macï¿½æ±¾ï¿½Äµï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	#ifndef __APPLE__
 		int i = this->api->ReqUserLogin(&myreq, reqid);
 	#else
@@ -10272,7 +10338,7 @@ int TdApi::reqQryRiskSettleProductStatus(const dict &req, int reqid)
 };
 
 ///-------------------------------------------------------------------------------------
-///Boost.Python·â×°
+///Boost.Pythonï¿½ï¿½×°
 ///-------------------------------------------------------------------------------------
 
 class PyTdApi : public TdApi

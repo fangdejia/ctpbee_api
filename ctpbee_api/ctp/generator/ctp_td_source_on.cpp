@@ -466,6 +466,18 @@ void onRspQryInstrument(const dict &data, const dict &error, int reqid, bool las
 	}
 };
 
+void onRspQryInstrumentBatch(const list &data) override
+{
+	try
+	{
+		PYBIND11_OVERLOAD(void, TdApi, onRspQryInstrumentBatch, data);
+	}
+	catch (const error_already_set &e)
+	{
+		cout << e.what() << endl;
+	}
+};
+
 void onRspQryDepthMarketData(const dict &data, const dict &error, int reqid, bool last) override
 {
 	try

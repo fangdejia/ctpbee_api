@@ -1,50 +1,79 @@
-# ctpbee_api
+# ctpbee_opt_api
 
-构建统一完善的量化交易API
+基于 [ctpbee_api](https://github.com/ctpbee/ctpbee_api) 的优化版本，感谢原作者 [somewheve](https://github.com/somewheve) 的贡献。
 
-> 此处描述`ctpbee`里面的 `API` 生成
+## 优化内容
 
-## 如何安装
+### 1. 合约查询批量模式 (Instrument Batch Mode)
 
+解决全量查询合约时 GIL 争抢导致 UI 界面卡顿的问题。
+
+**问题背景**: 查询全量合约（约 14000 条）时，CTP 回调会逐条触发 Python 回调，每次都需要获取 GIL，导致 Qt 主线程无法响应，界面完全卡死约 15 秒。
+
+**解决方案**: 新增批量模式，在 C++ 层缓存所有合约数据，仅在最后一条数据到达时一次性回调 Python，GIL 只获取一次。
+
+## 安装
+
+```bash
+pip install ctpbee_opt_api
 ```
-pip3 install ctpbee_api # for linux and windows
-pip3 install git+https://github.com/ctpbee/ctpbee_api # for macos
+
+## 使用方法
+
+```python
+from ctpbee_api import TdApi
+
+class MyTdApi(TdApi):
+    def onRspQryInstrumentBatch(self, instruments):
+        # 批量模式下，一次性收到所有合约
+        print(f"收到 {len(instruments)} 条合约")
+        for inst in instruments:
+            print(inst["InstrumentID"], inst["InstrumentName"])
+
+td_api = MyTdApi()
+td_api.setInstrumentBatchMode(True)  # 开启批量模式
+td_api.reqQryInstrument({}, 0)
+# 等待 onRspQryInstrumentBatch 回调
 ```
 
-## 支持操作系统
+### 默认模式（向后兼容）
 
-- [x] windows `['ctp', 'rohon, 'ctp_mini']`
-- [x] macos `['ctp']`
-- [x] linux `['ctp', 'ctp_mini', rohon]`
+不调用 `setInstrumentBatchMode(True)` 时，行为与原版 ctpbee_api 完全一致：
 
-windows采用预编译进行支持
+```python
+class MyTdApi(TdApi):
+    def onRspQryInstrument(self, data, error, reqid, last):
+        # 每条合约数据都会触发此回调
+        if data:
+            print(data["InstrumentID"])
+        if last:
+            print("查询完成")
+```
 
-`python`版本:
+## 新增 API
 
-- `python38+`
+| 方法 | 说明 |
+|------|------|
+| `setInstrumentBatchMode(enable: bool)` | 设置合约查询批量模式 |
+| `getInstrumentBatchMode() -> bool` | 获取当前批量模式状态 |
+| `onRspQryInstrumentBatch(instruments: list)` | 批量模式下的合约查询回调 |
 
-#### 对接生成指定版本的对接文件，参见`ctp/generate`
+## 支持平台
 
----
+- Windows: `ctp`, `rohon`, `ctp_mini`
+- Linux: `ctp`, `rohon`, `ctp_mini`
+- macOS: `ctp`
 
-**此底层API为[vnpy](https://github.com/vnpy/vnpy)的接口的集合封装, 提供一对多API对接**
+## Python 版本
 
----
+- Python 3.8+
 
-### 对接标准
+## 致谢
 
-> setup.py 文件里面描述基本标注
+- 原项目: [ctpbee_api](https://github.com/ctpbee/ctpbee_api)
+- 原作者: [somewheve](https://github.com/somewheve)
+- 底层 API 基于 [vnpy](https://github.com/vnpy/vnpy)
 
-- module需要标识单个名字 `rohon`
-- module下面的子目录应该带 `vn` + `rohon`
-- 接口文件目录和文件命名规则 应该为 `vnrohonmd` + `vnrohontd`, vn是固定前缀 md和td为固定后缀
+## License
 
-### mac 如何工作
-小心一点, mac需要从源码安装
-`pip3`第一次安装后会编译安装成功, 第一次运行会提示不受信任的开发者 请前往`隐私与安全性`接受framework，
-，官方`framework`存在一点小问题， 我是采用`somewheve`进行自签名的
-
-frameworks路径在`~/.ctpbee/Frameworks/`下
-
-
-> ps: 作者不擅长Mac开发 希望大佬给予pr
+MIT
