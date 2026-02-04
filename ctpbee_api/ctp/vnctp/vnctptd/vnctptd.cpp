@@ -12153,5 +12153,8 @@ PYBIND11_MODULE(vnctptd, m)
 		.def("onRspQryCombPromotionParam", &TdApi::onRspQryCombPromotionParam)
 		.def("onRspQryRiskSettleInvstPosition", &TdApi::onRspQryRiskSettleInvstPosition)
 		.def("onRspQryRiskSettleProductStatus", &TdApi::onRspQryRiskSettleProductStatus)
+		.def("setInstrumentBatchMode", &TdApi::setInstrumentBatchMode)
+		.def("getInstrumentBatchMode", &TdApi::getInstrumentBatchMode)
+		.def("onRspQryInstrumentBatch", &TdApi::onRspQryInstrumentBatch)
 		;
 }
