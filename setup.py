@@ -249,7 +249,7 @@ for pkg in pkgs:
 
 setup(
     name='ctpbee_opt_api',
-    version="0.1.3",
+    version="0.1.4",
     description="Optimized Trading API for China Future - Based on ctpbee_api with GIL optimization",
     author='fangdejia',
     long_description=long_description,
