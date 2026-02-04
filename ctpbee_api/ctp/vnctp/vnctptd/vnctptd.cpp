@@ -4607,19 +4607,44 @@ void TdApi::processRspQryInstrument(Task *task)
 		{
 			gil_scoped_acquire acquire;
 			pybind11::list result;
-			// 只传递必要字段，减少 Python 对象创建开销
 			for (const auto& item : this->instrument_buffer)
 			{
 				dict data;
-				data["InstrumentID"] = toUtf(item.InstrumentID);
-				data["InstrumentName"] = toUtf(item.InstrumentName);
+				data["reserve1"] = toUtf(item.reserve1);
 				data["ExchangeID"] = toUtf(item.ExchangeID);
-				data["ProductID"] = toUtf(item.ProductID);
+				data["InstrumentName"] = toUtf(item.InstrumentName);
+				data["reserve2"] = toUtf(item.reserve2);
+				data["reserve3"] = toUtf(item.reserve3);
 				data["ProductClass"] = item.ProductClass;
+				data["DeliveryYear"] = item.DeliveryYear;
+				data["DeliveryMonth"] = item.DeliveryMonth;
+				data["MaxMarketOrderVolume"] = item.MaxMarketOrderVolume;
+				data["MinMarketOrderVolume"] = item.MinMarketOrderVolume;
+				data["MaxLimitOrderVolume"] = item.MaxLimitOrderVolume;
+				data["MinLimitOrderVolume"] = item.MinLimitOrderVolume;
 				data["VolumeMultiple"] = item.VolumeMultiple;
 				data["PriceTick"] = item.PriceTick;
-				data["IsTrading"] = item.IsTrading;
+				data["CreateDate"] = toUtf(item.CreateDate);
+				data["OpenDate"] = toUtf(item.OpenDate);
+				data["ExpireDate"] = toUtf(item.ExpireDate);
+				data["StartDelivDate"] = toUtf(item.StartDelivDate);
+				data["EndDelivDate"] = toUtf(item.EndDelivDate);
 				data["InstLifePhase"] = item.InstLifePhase;
+				data["IsTrading"] = item.IsTrading;
+				data["PositionType"] = item.PositionType;
+				data["PositionDateType"] = item.PositionDateType;
+				data["LongMarginRatio"] = item.LongMarginRatio;
+				data["ShortMarginRatio"] = item.ShortMarginRatio;
+				data["MaxMarginSideAlgorithm"] = item.MaxMarginSideAlgorithm;
+				data["reserve4"] = toUtf(item.reserve4);
+				data["StrikePrice"] = item.StrikePrice;
+				data["OptionsType"] = item.OptionsType;
+				data["UnderlyingMultiple"] = item.UnderlyingMultiple;
+				data["CombinationType"] = item.CombinationType;
+				data["InstrumentID"] = toUtf(item.InstrumentID);
+				data["ExchangeInstID"] = toUtf(item.ExchangeInstID);
+				data["ProductID"] = toUtf(item.ProductID);
+				data["UnderlyingInstrID"] = toUtf(item.UnderlyingInstrID);
 				result.append(data);
 			}
 			this->instrument_buffer.clear();
