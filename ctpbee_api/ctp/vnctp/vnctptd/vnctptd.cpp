@@ -768,6 +768,26 @@ void TdApi::OnRspQryProduct(CThostFtdcProductField *pProduct, CThostFtdcRspInfoF
 
 void TdApi::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+	// 批量模式：直接在 CTP 回调线程缓存，不走 Task 队列
+	if (this->instrument_batch_mode)
+	{
+		if (pInstrument)
+		{
+			this->instrument_buffer.push_back(*pInstrument);
+		}
+		if (bIsLast)
+		{
+			// 最后一条，创建一个特殊 Task 触发批量回调
+			Task task = Task();
+			task.task_name = ONRSPQRYINSTRUMENT;
+			task.task_last = true;
+			task.task_id = nRequestID;
+			this->task_queue.push(task);
+		}
+		return;
+	}
+	
+	// 非批量模式：原有逻辑
 	Task task = Task();
 	task.task_name = ONRSPQRYINSTRUMENT;
 	if (pInstrument)
@@ -4579,21 +4599,10 @@ void TdApi::processRspQryProduct(Task *task)
 
 void TdApi::processRspQryInstrument(Task *task)
 {
-	// 批量模式：缓存数据，最后一条时一次性回调
+	// 批量模式：数据已在 OnRspQryInstrument 中缓存，这里只处理最后的回调
 	if (this->instrument_batch_mode)
 	{
-		if (task->task_data)
-		{
-			CThostFtdcInstrumentField *task_data = (CThostFtdcInstrumentField*)task->task_data;
-			this->instrument_buffer.push_back(*task_data);
-			delete task_data;
-		}
-		if (task->task_error)
-		{
-			delete (CThostFtdcRspInfoField*)task->task_error;
-		}
-		
-		// 最后一条数据，一次性回调 Python
+		// 批量模式下 task_data 为空，数据已在 instrument_buffer 中
 		if (task->task_last)
 		{
 			gil_scoped_acquire acquire;
